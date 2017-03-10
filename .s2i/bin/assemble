@@ -1,0 +1,38 @@
+#!/bin/bash
+
+set -e
+
+echo
+echo "===> Build started at $(date)"
+echo
+START=$SECONDS
+
+# Unconditionally print elapsed build time at exit
+function finish {
+  echo "===> Elapsed time: $(($SECONDS - $START)) seconds"
+}
+trap finish EXIT
+
+echo "---> Preparing source...hhh"
+SOURCE=$GOPATH/src/github.com/microservices-demo/user
+mkdir -p $SOURCE
+
+cp -Rf /tmp/src/. $SOURCE
+
+cd $SOURCE
+
+echo "---> Downloading dependencies..."
+go get -v github.com/Masterminds/glide
+glide install
+
+echo "---> Building application source..."
+CGO_ENABLED=0 go build -a -installsuffix cgo -v -o user main.go
+
+echo "---> Installing application binary..."
+cp ./user /opt/app-root/bin
+
+echo
+echo "===> Build completed at $(date)"
+
+# Fix source directory permissions
+fix-permissions ./
